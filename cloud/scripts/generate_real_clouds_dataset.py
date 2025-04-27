@@ -2,7 +2,7 @@ import os
 from typing import List, Tuple
 from tqdm import tqdm
 import argparse
-from utils import load_image, patchify, save_patches, get_filenames
+from .utils import load_image, patchify, save_patches, get_filenames
 
 
 def build_argparser() -> argparse.ArgumentParser:
@@ -51,7 +51,19 @@ def process(
     Returns:
         None
     """
-    return NotImplementedError
+    index = 0
+        
+    for file in filenames:
+        #load & crop img to (1024,512)
+        #convert cropped img into np array
+        cropped_img = load_image(file, crop)
+            
+        #split np array into patches of (256,256)
+        patches = patchify(cropped_img, patch_size)
+        
+        #convert patches to images of (256,256)
+        #save imgs in output dir dir
+        index = save_patches(patches, output_dir, index)
 
 
 def main():
@@ -65,7 +77,7 @@ def main():
         filenames = filenames[:args.max_files]
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
-    process(filenames, args.patch_size, args.crop, args.output_dir)
+    process(f'{args.input_dir}/{filenames}', args.patch_size, args.crop, args.output_dir)
 
 
 if __name__ == "__main__":
