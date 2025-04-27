@@ -1,7 +1,9 @@
-from typing import List, Tuple
-import os
+import pathlib
 from pathlib import Path
-import argparse
+import typing
+from typing import Tuple, List
+import logging
+import os
 
 
 def build_argparser() -> argparse.ArgumentParser:
@@ -35,13 +37,27 @@ def build_argparser() -> argparse.ArgumentParser:
 
 
 def browse_folder(
-        path: Path, 
-        A: str, 
+        path: Path,
+        A: str,
         B: str) -> Tuple[List[Path], List[Path]]:
     """
-    Browse a directory and return a list of all the png files in it and its subfolder.
+    Browse a directory and return a list of all the jpg files in it and its subfolder.
     """
-    return NotImplementedError
+    logging.info(f"Browsing folder {path}")
+    filenames_synth, filenames_real = [], []
+    for p in path.iterdir():
+        if p.is_dir():
+            filenames = browse_folder(p, A, B)
+            filenames_real.extend(filenames[0])
+            filenames_synth.extend(filenames[1])
+        elif p.suffix == '.jpg':
+            if A in str(p):
+                path_synth = p
+                path_real = Path(str(p).replace(A, B))
+                filenames_synth.append(path_synth)
+                filenames_real.append(path_real)
+                
+    return filenames_synth, filenames_real
 
 
 def check_existence(
@@ -53,7 +69,8 @@ def check_existence(
     Returns:
         None
     """
-    return NotImplementedError
+    for file_path in filenames:
+        assert file_path.exists(), f'Msissing corresponding real patch of {file_path}'
 
 
 def create_folders(
@@ -67,12 +84,15 @@ def create_folders(
     Returns:
         None
     """
-    return NotImplementedError
+    os.makedirs(input_dir/folder_list[0], exist_ok=True)
+    os.makedirs(input_dir/folder_list[1], exist_ok=True)
+    os.makedirs(input_dir/folder_list[2], exist_ok=True)
+    os.makedirs(input_dir/folder_list[3], exist_ok=True)
 
 
 def split_train_test(
         filenames: List[Path], 
-        alpha: float) -> Tuple[List[Path], List[Path]]:
+        alpha: float = 0.9) -> Tuple[List[Path], List[Path]]:
     """
     Split the filenames into training and testing sets.
     Args:
@@ -81,12 +101,17 @@ def split_train_test(
     Returns:
         Tuple[List[Path], List[Path]]: Training and testing filenames.
     """
-    return NotImplementedError
+    assert 0 < alpha < 1 
+    n = len(filenames)
+    n_train = int(n * alpha)
+    filenames_train = filenames[:n_train]
+    filenames_test = filenames[n_train:]
+    return filenames_train, filenames_test
 
 
 def create_symlinks(
         filenames: List[Path],
-        input_dir: Path,
+        #input_dir: Path, (excluded)
         split_dir: Path) -> None:
     """
     Create symbolic links for the training and testing images.
@@ -97,7 +122,8 @@ def create_symlinks(
     Returns:
         None
     """
-    return NotImplementedError
+    for i in range(len(filenames)):
+        os.symlink(filenames[i], f'{split_dir}/{i}.jpg')
 
 
 def process(input_dir: str, A: str, B: str, folders: List[str], alpha: float) -> None:
@@ -112,6 +138,21 @@ def process(input_dir: str, A: str, B: str, folders: List[str], alpha: float) ->
     Returns:
         None
     """
+    datapath = Path(input_dir)
+    paths_synth, paths_real = browse_folder(datapath, A, B)
+    
+    check_existence(paths_synth)
+    check_existence(paths_real)
+    
+    create_folders(datapath, folders)
+    
+    trainA, testA = split_train_test(paths_synth) 
+    trainB, testB = split_train_test(paths_real)
+    
+    create_symlinks(trainA, f'{input_dir}/trainA')
+    create_symlinks(testA, f'{input_dir}/testA')
+    create_symlinks(trainB, f'{input_dir}/trainB')
+    create_symlinks(testB, f'{input_dir}/testB')
     return NotImplementedError
 
 
