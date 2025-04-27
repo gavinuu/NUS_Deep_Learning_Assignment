@@ -12,7 +12,10 @@ def get_filenames(input_dir: str) -> List[str]:
     Returns:
         List[str]: List of image filenames.
     """
-    return NotImplementedError
+    files = os.listdir(input_dir)
+    filenames = [f for f in files if os.path.isfile(f'{input_dir}/{f}')]
+        
+    return filenames
 
 
 def load_image(
@@ -28,7 +31,11 @@ def load_image(
     Returns:
         np.ndarray: Numpy array of the image.
     """
-    return NotImplementedError
+    with Image.open(path) as img:
+        cropped_img = img.crop(crop)
+        img_arr = np.array(cropped_img)
+    
+    return img_arr
 
 
 def patchify(
@@ -42,13 +49,20 @@ def patchify(
     Returns:
         List[np.ndarray]: A list of patches.
     """
-    return NotImplementedError
+    patches = []
+    
+    for i in range(0, img.shape[0], patch_size[0]):
+        for j in range(0, img.shape[1], patch_size[1]):
+            patch = img[i: i + patch_size[0], j: j + patch_size[1]]
+            patches.append(patch)
+    
+    return patches
 
 
 def save_patches(
         patches: List[np.ndarray], 
         output_dir: str,
-        starting_index: int) -> None:
+        starting_index: int) -> int:
     """Save the synthetic clouds to the output directory.
     Args:
         patches: The list of patches.
@@ -57,4 +71,10 @@ def save_patches(
     Returns:
         None
     """
-    return NotImplementedError
+    
+    for patch in patches:
+        img_patch = Image.fromarray(patch)
+        img_patch.save(f'{output_dir}/{starting_index}.jpg')
+        starting_index += 1
+    
+    return starting_index
