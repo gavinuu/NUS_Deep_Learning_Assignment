@@ -1,0 +1,17 @@
+Delivered:
+- Jupyter scripts for each of the python scripts in cloud/scripts (scripts modified as well, but untested as they cannot be executed on my laptop)
+- Mask used to generate synthetic dataset 
+
+The above has been used successfully to generate real & synthetic datasets.
+Please verify in cloud/dataset.
+
+
+
+Not Delivered:
+- 4 .pth files corresponding to final trained model
+- train_opt.txt
+- log_loss.txt
+
+No training could be performed on Vanda HPC cluster.
+Too many errors which have never been encountered before.
+
